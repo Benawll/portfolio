@@ -115,6 +115,54 @@ async function runDesktopCheck() {
       `Expected theme at #projects to switch to 'dark', got '${projectsTheme}'`,
     );
 
+    // Verify theme stays 'dark' across projects 2, 3, and 4 of the pinned horizontal scroll
+    const projectScrollPositions = await page.evaluate(() => {
+      const el = document.getElementById('projects');
+      if (!el) return null;
+      const top = el.getBoundingClientRect().top + window.scrollY;
+      const travel = Math.max(0, el.getBoundingClientRect().height - window.innerHeight);
+      return [
+        { label: 'project 2 (~33%)', y: Math.round(top + travel * 0.33) },
+        { label: 'project 3 (~66%)', y: Math.round(top + travel * 0.66) },
+        { label: 'project 4 (~95%)', y: Math.round(top + travel * 0.95) },
+      ];
+    });
+
+    assert(projectScrollPositions !== null, '#projects section not found');
+    for (const pos of projectScrollPositions) {
+      await page.evaluate((y) => {
+        window.scrollTo({ top: y, behavior: 'instant' });
+      }, pos.y);
+      await page.waitForTimeout(300);
+      const themeAtPos = await page.evaluate(
+        () => document.documentElement.dataset.theme,
+      );
+      assert(
+        themeAtPos === 'dark',
+        `Expected theme at ${pos.label} (y=${pos.y}) to remain 'dark', got '${themeAtPos}'`,
+      );
+    }
+
+    // Scroll to #experience (Parcours) and verify theme switches back to 'light'
+    await page.evaluate(() => {
+      const exp = document.getElementById('experience');
+      if (exp) {
+        window.scrollTo({
+          top: exp.getBoundingClientRect().top + window.scrollY + 200,
+          behavior: 'instant',
+        });
+      }
+    });
+    await page.waitForTimeout(700);
+
+    const experienceTheme = await page.evaluate(
+      () => document.documentElement.dataset.theme,
+    );
+    assert(
+      experienceTheme === 'light',
+      `Expected theme at #experience to switch back to 'light', got '${experienceTheme}'`,
+    );
+
     await assertAllImagesLoaded(page, 'Desktop Home');
 
     // Navigate to all 4 case study pages

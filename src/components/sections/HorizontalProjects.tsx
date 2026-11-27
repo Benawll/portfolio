@@ -181,18 +181,8 @@ export function HorizontalProjects() {
 
     const mm = gsap.matchMedia();
 
-    // 1. Chromatic switch Light -> Organic Charcoal Dark across all viewports
-    const themeTrigger = ScrollTrigger.create({
-      trigger: section,
-      start: 'top 60%',
-      end: 'bottom 45%',
-      onEnter: () => applyEditorialTheme('dark'),
-      onEnterBack: () => applyEditorialTheme('dark'),
-      onLeave: () => applyEditorialTheme('light'),
-      onLeaveBack: () => applyEditorialTheme('light'),
-    });
-
-    // 2. Pinned horizontal scroll on desktop >= 1024px when motion is allowed
+    // 1. Pinned horizontal scroll on desktop >= 1024px when motion is allowed
+    // Registered first so its pin-spacer expands `section` before themeTrigger measures bounds.
     if (pinEl && trackEl && !reducedMotion) {
       mm.add('(min-width: 1024px)', () => {
         const panels = gsap.utils.toArray<HTMLElement>(
@@ -252,6 +242,22 @@ export function HorizontalProjects() {
         });
       });
     }
+
+    // 2. Chromatic switch Light -> Organic Charcoal Dark across all viewports.
+    // Lower refreshPriority (-1) guarantees it refreshes AFTER the pin-spacer is sized.
+    const themeTrigger = ScrollTrigger.create({
+      trigger: section,
+      start: 'top 60%',
+      end: 'bottom 45%',
+      invalidateOnRefresh: true,
+      refreshPriority: -1,
+      onEnter: () => applyEditorialTheme('dark'),
+      onEnterBack: () => applyEditorialTheme('dark'),
+      onLeave: () => applyEditorialTheme('light'),
+      onLeaveBack: () => applyEditorialTheme('light'),
+    });
+
+    ScrollTrigger.refresh();
 
     return () => {
       themeTrigger.kill();
