@@ -1,0 +1,272 @@
+import { chromium, type Page } from 'playwright';
+
+const BASE_URL = 'http://127.0.0.1:4173';
+const PROJECT_SLUGS = [
+  'agentflow-studio',
+  'pulselake-mlops',
+  'token-optimizer',
+  'awll-disk-utility',
+] as const;
+
+function assert(condition: unknown, message: string): asserts condition {
+  if (!condition) {
+    throw new Error(`Assertion failed: ${message}`);
+  }
+}
+
+interface Diagnostics {
+  consoleErrors: string[];
+  pageErrors: string[];
+  notFoundUrls: string[];
+}
+
+function attachDiagnostics(page: Page): Diagnostics {
+  const diagnostics: Diagnostics = {
+    consoleErrors: [],
+    pageErrors: [],
+    notFoundUrls: [],
+  };
+
+  page.on('console', (msg) => {
+    if (msg.type() === 'error') {
+      diagnostics.consoleErrors.push(msg.text());
+    }
+  });
+
+  page.on('pageerror', (err) => {
+    diagnostics.pageErrors.push(err.message);
+  });
+
+  page.on('response', (res) => {
+    if (res.status() === 404) {
+      diagnostics.notFoundUrls.push(res.url());
+    }
+  });
+
+  return diagnostics;
+}
+
+async function assertAllImagesLoaded(page: Page, contextLabel: string) {
+  const brokenImages = await page.evaluate(async () => {
+    const imgs = Array.from(document.querySelectorAll('img')).filter(
+      (img) => img.getClientRects().length > 0,
+    );
+
+    await Promise.all(
+      imgs.map((img) => {
+        img.scrollIntoView({ behavior: 'instant', block: 'center', inline: 'center' });
+        if (img.complete && img.naturalWidth > 0) return Promise.resolve();
+        return new Promise<void>((resolve) => {
+          img.addEventListener('load', () => resolve(), { once: true });
+          img.addEventListener('error', () => resolve(), { once: true });
+          setTimeout(resolve, 4000);
+        });
+      }),
+    );
+
+    return imgs
+      .filter((img) => !img.complete || img.naturalWidth === 0)
+      .map((img) => img.getAttribute('src') ?? '(no src)');
+  });
+
+  assert(
+    brokenImages.length === 0,
+    `${contextLabel}: broken images found: ${brokenImages.join(', ')}`,
+  );
+}
+
+async function runDesktopCheck() {
+  const browser = await chromium.launch({ headless: true });
+  try {
+    const context = await browser.newContext({
+      viewport: { width: 1440, height: 900 },
+    });
+    const page = await context.newPage();
+    const diag = attachDiagnostics(page);
+
+    await page.goto(BASE_URL, { waitUntil: 'networkidle' });
+    await page.evaluate(() => document.fonts.ready);
+
+    const initialTheme = await page.evaluate(
+      () => document.documentElement.dataset.theme,
+    );
+    assert(
+      initialTheme === 'light',
+      `Expected initial desktop theme to be 'light', got '${initialTheme}'`,
+    );
+
+    // Scroll to #projects to trigger GSAP ScrollTrigger dark theme switch
+    await page.evaluate(() => {
+      const el = document.getElementById('projects');
+      if (el) {
+        window.scrollTo({
+          top: el.getBoundingClientRect().top + window.scrollY + 120,
+          behavior: 'instant',
+        });
+      }
+    });
+    await page.waitForTimeout(700);
+
+    const projectsTheme = await page.evaluate(
+      () => document.documentElement.dataset.theme,
+    );
+    assert(
+      projectsTheme === 'dark',
+      `Expected theme at #projects to switch to 'dark', got '${projectsTheme}'`,
+    );
+
+    await assertAllImagesLoaded(page, 'Desktop Home');
+
+    // Navigate to all 4 case study pages
+    for (const slug of PROJECT_SLUGS) {
+      await page.goto(`${BASE_URL}/projects/${slug}`, {
+        waitUntil: 'networkidle',
+      });
+      await page.waitForSelector('h1', { state: 'visible' });
+      await assertAllImagesLoaded(page, `Desktop /projects/${slug}`);
+    }
+
+    assert(
+      diag.consoleErrors.length === 0,
+      `Desktop console errors: ${diag.consoleErrors.join(' | ')}`,
+    );
+    assert(
+      diag.pageErrors.length === 0,
+      `Desktop page errors: ${diag.pageErrors.join(' | ')}`,
+    );
+    assert(
+      diag.notFoundUrls.length === 0,
+      `Desktop 404 responses: ${diag.notFoundUrls.join(' | ')}`,
+    );
+  } finally {
+    await browser.close();
+  }
+}
+
+async function runMobileCheck() {
+  const browser = await chromium.launch({ headless: true });
+  try {
+    const context = await browser.newContext({
+      viewport: { width: 390, height: 844 },
+      hasTouch: true,
+      isMobile: true,
+    });
+    const page = await context.newPage();
+    const diag = attachDiagnostics(page);
+
+    await page.goto(BASE_URL, { waitUntil: 'networkidle' });
+    await page.evaluate(() => document.fonts.ready);
+
+    // Check horizontal overflow across full page scroll
+    const overflowResults = await page.evaluate(() => {
+      const checks: Array<{ y: number; scrollWidth: number; innerWidth: number }> = [];
+      const maxScroll = document.documentElement.scrollHeight;
+      for (const ratio of [0, 0.25, 0.5, 0.75, 1]) {
+        const y = Math.floor(maxScroll * ratio);
+        window.scrollTo({ top: y, behavior: 'instant' });
+        checks.push({
+          y,
+          scrollWidth: document.documentElement.scrollWidth,
+          innerWidth: window.innerWidth,
+        });
+      }
+      return checks;
+    });
+
+    for (const check of overflowResults) {
+      assert(
+        check.scrollWidth <= check.innerWidth,
+        `Mobile horizontal overflow at y=${check.y}: scrollWidth (${check.scrollWidth}) > innerWidth (${check.innerWidth})`,
+      );
+    }
+
+    // Verify vertical stacking of projects on mobile
+    const articleTops = await page.evaluate(() => {
+      const section = document.getElementById('projects');
+      if (!section) return [];
+      const articles = Array.from(section.querySelectorAll('article')).filter(
+        (el) => el.getBoundingClientRect().height > 0,
+      );
+      return articles.map((el) => el.getBoundingClientRect().top);
+    });
+
+    assert(
+      articleTops.length === 4,
+      `Expected 4 visible vertical project cards on mobile, found ${articleTops.length}`,
+    );
+    for (let i = 1; i < articleTops.length; i += 1) {
+      assert(
+        articleTops[i] > articleTops[i - 1],
+        `Mobile project card ${i} is not stacked vertically below card ${i - 1}`,
+      );
+    }
+
+    assert(
+      diag.consoleErrors.length === 0,
+      `Mobile console errors: ${diag.consoleErrors.join(' | ')}`,
+    );
+    assert(
+      diag.pageErrors.length === 0,
+      `Mobile page errors: ${diag.pageErrors.join(' | ')}`,
+    );
+    assert(
+      diag.notFoundUrls.length === 0,
+      `Mobile 404 responses: ${diag.notFoundUrls.join(' | ')}`,
+    );
+  } finally {
+    await browser.close();
+  }
+}
+
+async function runReducedMotionCheck() {
+  const browser = await chromium.launch({ headless: true });
+  try {
+    const context = await browser.newContext({
+      viewport: { width: 1440, height: 900 },
+      reducedMotion: 'reduce',
+    });
+    const page = await context.newPage();
+
+    await page.goto(BASE_URL, { waitUntil: 'networkidle' });
+    await page.evaluate(() => document.fonts.ready);
+
+    // Scroll through every section and check none is stuck at opacity: 0
+    const hiddenSections = await page.evaluate(async () => {
+      const targets = Array.from(
+        document.querySelectorAll('main > section, footer'),
+      );
+      const stuck: string[] = [];
+
+      for (const el of targets) {
+        el.scrollIntoView({ behavior: 'instant', block: 'center' });
+        await new Promise((r) => setTimeout(r, 150));
+        const opacity = Number.parseFloat(window.getComputedStyle(el).opacity);
+        if (Number.isNaN(opacity) || opacity === 0) {
+          stuck.push(el.id || el.tagName);
+        }
+      }
+      return stuck;
+    });
+
+    assert(
+      hiddenSections.length === 0,
+      `Sections stuck at opacity: 0 in reduced-motion mode: ${hiddenSections.join(', ')}`,
+    );
+  } finally {
+    await browser.close();
+  }
+}
+
+async function main() {
+  await runDesktopCheck();
+  console.log('✓ Desktop 1440x900 smoke check passed');
+  await runMobileCheck();
+  console.log('✓ Mobile 390x844 smoke check passed');
+  await runReducedMotionCheck();
+  console.log('✓ prefers-reduced-motion: reduce smoke check passed');
+}
+
+main().catch((err) => {
+  console.error(err);
+  throw err;
+});

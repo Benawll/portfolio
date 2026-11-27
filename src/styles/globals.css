@@ -1,0 +1,178 @@
+@import 'tailwindcss';
+
+/* ==========================================================================
+   Editorial Palette Tokens — Paper / Ink (Light) -> Organic Charcoal (Dark)
+   CSS custom properties designed for smooth GSAP ScrollTrigger interpolation
+   on document.documentElement.
+   ========================================================================== */
+
+:root {
+  /* Reference constants — Light Editorial (Sections 1, 2, 4, 5) */
+  --theme-light-bg: #f5f2eb;
+  --theme-light-surface: #ece8df;
+  --theme-light-fg: #141413;
+  --theme-light-fg-muted: #5e5b54;
+  --theme-light-border: #d8d3c8;
+  --theme-light-accent: #c84b31;
+  --theme-light-accent-tech: #2d6a4f;
+
+  /* Reference constants — Organic Charcoal Dark (Sections 3 & 6) */
+  --theme-dark-bg: #111110;
+  --theme-dark-surface: #1a1a18;
+  --theme-dark-fg: #f2efe9;
+  --theme-dark-fg-muted: #9e9a90;
+  --theme-dark-border: #2b2a27;
+  --theme-dark-accent: #d96045;
+  --theme-dark-accent-tech: #4e9a74;
+
+  /* Active theme variables (interpolated by GSAP ScrollTrigger) */
+  --bg: var(--theme-light-bg);
+  --surface: var(--theme-light-surface);
+  --fg: var(--theme-light-fg);
+  --fg-muted: var(--theme-light-fg-muted);
+  --border: var(--theme-light-border);
+  --accent: var(--theme-light-accent);
+  --accent-tech: var(--theme-light-accent-tech);
+
+  /* Typography */
+  --font-display: 'Instrument Serif', Georgia, 'Times New Roman', serif;
+  --font-sans: 'Plus Jakarta Sans', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+
+  /* Subtle paper grain opacity */
+  --grain-opacity: 0.03;
+}
+
+/* Explicit dark surface scope (fallback / standalone dark sections) */
+[data-theme='dark'] {
+  --bg: var(--theme-dark-bg);
+  --surface: var(--theme-dark-surface);
+  --fg: var(--theme-dark-fg);
+  --fg-muted: var(--theme-dark-fg-muted);
+  --border: var(--theme-dark-border);
+  --accent: var(--theme-dark-accent);
+  --accent-tech: var(--theme-dark-accent-tech);
+}
+
+@theme inline {
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-fg: var(--fg);
+  --color-fg-muted: var(--fg-muted);
+  --color-border: var(--border);
+  --color-accent: var(--accent);
+  --color-accent-tech: var(--accent-tech);
+
+  --font-display: var(--font-display);
+  --font-sans: var(--font-sans);
+  --font-mono: var(--font-mono);
+}
+
+/* ==========================================================================
+   Base Document & Typography
+   ========================================================================== */
+
+@layer base {
+  html {
+    background-color: var(--bg);
+    color: var(--fg);
+    font-family: var(--font-sans);
+    font-size: 16px;
+    line-height: 1.6;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    scroll-behavior: auto;
+  }
+
+  body {
+    margin: 0;
+    min-height: 100vh;
+    background-color: var(--bg);
+    color: var(--fg);
+    overflow-x: clip;
+  }
+
+  ::selection {
+    background-color: var(--accent);
+    color: #f5f2eb;
+  }
+
+  a:focus-visible,
+  button:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 3px;
+  }
+}
+
+/* ==========================================================================
+   Editorial Typography Utilities
+   ========================================================================== */
+
+.font-display-editorial {
+  font-family: var(--font-display);
+  letter-spacing: -0.025em;
+  line-height: 0.96;
+}
+
+.display-hero {
+  font-family: var(--font-display);
+  font-size: clamp(2.75rem, 6vw, 6.5rem);
+  letter-spacing: -0.025em;
+  line-height: 0.96;
+  font-weight: 400;
+}
+
+.display-section {
+  font-family: var(--font-display);
+  font-size: clamp(2.25rem, 4.5vw, 4.5rem);
+  letter-spacing: -0.025em;
+  line-height: 0.98;
+  font-weight: 400;
+}
+
+.font-mono-metric {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Hairline Swiss grid border */
+.hairline-border {
+  border-color: var(--border);
+}
+
+/* ==========================================================================
+   Subtle Paper Grain Overlay (SVG Noise, ~0 GPU cost)
+   ========================================================================== */
+
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  pointer-events: none;
+  opacity: var(--grain-opacity);
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+  background-repeat: repeat;
+  background-size: 180px 180px;
+}
+
+/* ==========================================================================
+   Strict prefers-reduced-motion Support
+   ========================================================================== */
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  [data-reveal] {
+    opacity: 1 !important;
+    transform: none !important;
+  }
+}
