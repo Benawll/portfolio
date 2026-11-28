@@ -305,9 +305,70 @@ async function runReducedMotionCheck() {
   }
 }
 
+async function runShortDesktopCheck(width: number, height: number) {
+  const browser = await chromium.launch({ headless: true });
+  try {
+    const context = await browser.newContext({ viewport: { width, height } });
+    const page = await context.newPage();
+
+    await page.goto(BASE_URL, { waitUntil: 'networkidle' });
+    await page.evaluate(() => document.fonts.ready);
+
+    // Scroll to #projects and verify all project action buttons fit within the viewport height
+    const panels = await page.evaluate(() => {
+      const el = document.getElementById('projects');
+      if (!el) return null;
+      const top = el.getBoundingClientRect().top + window.scrollY;
+      const travel = Math.max(0, el.getBoundingClientRect().height - window.innerHeight);
+      return [0, 0.34, 0.67, 0.99].map((ratio, idx) => ({
+        idx,
+        y: Math.round(top + travel * ratio),
+      }));
+    });
+
+    assert(panels !== null, '#projects section not found');
+    for (const panel of panels) {
+      await page.evaluate((y) => {
+        window.scrollTo({ top: y, behavior: 'instant' });
+      }, panel.y);
+      await page.waitForTimeout(350);
+
+      const clipped = await page.evaluate((panelIdx) => {
+        const articles = Array.from(
+          document.querySelectorAll('#projects [data-project-panel]'),
+        );
+        const article = articles[panelIdx];
+        if (!article) return ['article missing'];
+        const actions = Array.from(article.querySelectorAll('a'));
+        const issues: string[] = [];
+        for (const a of actions) {
+          const rect = a.getBoundingClientRect();
+          if (rect.height === 0 || rect.bottom > window.innerHeight) {
+            issues.push(
+              `${a.textContent?.trim() ?? 'link'} bottom=${Math.round(rect.bottom)} > innerHeight=${window.innerHeight}`,
+            );
+          }
+        }
+        return issues;
+      }, panel.idx);
+
+      assert(
+        clipped.length === 0,
+        `Viewport ${width}x${height} panel ${panel.idx + 1} clipped actions: ${clipped.join('; ')}`,
+      );
+    }
+  } finally {
+    await browser.close();
+  }
+}
+
 async function main() {
   await runDesktopCheck();
   console.log('✓ Desktop 1440x900 smoke check passed');
+  await runShortDesktopCheck(1280, 720);
+  console.log('✓ Short desktop 1280x720 action visibility check passed');
+  await runShortDesktopCheck(1024, 640);
+  console.log('✓ Compact desktop 1024x640 action visibility check passed');
   await runMobileCheck();
   console.log('✓ Mobile 390x844 smoke check passed');
   await runReducedMotionCheck();

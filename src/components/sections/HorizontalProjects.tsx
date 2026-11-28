@@ -25,7 +25,7 @@ function ProjectPanelContent({
   const primaryMedia = project.media[0];
 
   return (
-    <div className="mx-auto grid w-full max-w-7xl grid-cols-1 items-center gap-8 px-6 lg:grid-cols-12 lg:gap-12 lg:px-10">
+    <div className="mx-auto grid w-full max-w-7xl grid-cols-1 items-center gap-6 px-6 lg:grid-cols-12 lg:gap-8 xl:gap-12 lg:px-10">
       {/* Editorial project meta & benchmarks */}
       <div className="flex flex-col justify-between lg:col-span-5">
         <div>
@@ -38,20 +38,20 @@ function ProjectPanelContent({
             <span>{project.year}</span>
           </div>
 
-          <p className="font-mono-metric mt-2 text-[11px] tracking-[0.12em] text-fg-muted uppercase">
+          <p className="font-mono-metric mt-1.5 text-[11px] tracking-[0.12em] text-fg-muted uppercase [@media(min-height:800px)]:mt-2">
             {pick(project.category)}
           </p>
 
-          <h3 className="font-display-editorial mt-3 text-4xl text-fg sm:text-5xl lg:text-[3.5rem]">
+          <h3 className="font-display-editorial mt-2 text-3xl leading-[1.06] text-fg sm:text-4xl lg:text-[2.5rem] xl:text-[3.1rem] [@media(min-height:800px)]:mt-3 [@media(min-height:820px)]:xl:text-[3.5rem]">
             {project.name}
           </h3>
 
-          <p className="mt-4 text-sm leading-relaxed text-fg-muted md:text-base">
+          <p className="mt-2.5 text-sm leading-relaxed text-fg-muted md:text-base [@media(min-height:800px)]:mt-4">
             {pick(project.tagline)}
           </p>
 
           {/* Measured highlight metrics */}
-          <dl className="mt-6 grid grid-cols-3 divide-x divide-border border-y border-border py-4">
+          <dl className="mt-4 grid grid-cols-3 divide-x divide-border border-y border-border py-2.5 [@media(min-height:800px)]:mt-6 [@media(min-height:800px)]:py-4">
             {project.highlightMetrics.map((metric) => (
               <div
                 key={metric.value}
@@ -68,7 +68,7 @@ function ProjectPanelContent({
           </dl>
 
           {/* Compact stack tags */}
-          <ul className="mt-5 flex flex-wrap gap-1.5">
+          <ul className="mt-3.5 flex flex-wrap gap-1.5 [@media(min-height:800px)]:mt-5">
             {project.stack.slice(0, 6).map((tech) => (
               <li
                 key={tech}
@@ -81,10 +81,10 @@ function ProjectPanelContent({
         </div>
 
         {/* Actions */}
-        <div className="mt-7 flex flex-wrap items-center gap-4">
+        <div className="mt-4 flex flex-wrap items-center gap-3 [@media(min-height:800px)]:mt-7 [@media(min-height:800px)]:gap-4">
           <Link
             to={`/projects/${project.slug}`}
-            className="font-mono-metric inline-flex items-center gap-2 border border-fg bg-fg px-5 py-2.5 text-xs tracking-[0.12em] text-bg uppercase transition-colors hover:border-accent hover:bg-accent"
+            className="font-mono-metric inline-flex items-center gap-2 border border-fg bg-fg px-5 py-2 text-xs tracking-[0.12em] text-bg uppercase transition-colors hover:border-accent hover:bg-accent [@media(min-height:800px)]:py-2.5"
           >
             <span>{t.projects.viewCaseStudy}</span>
             <ArrowRight className="h-3.5 w-3.5" strokeWidth={1.5} />
@@ -94,7 +94,7 @@ function ProjectPanelContent({
             href={project.repoUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="font-mono-metric inline-flex items-center gap-1.5 border border-border px-4 py-2.5 text-xs tracking-[0.12em] text-fg-muted uppercase transition-colors hover:border-fg hover:text-fg"
+            className="font-mono-metric inline-flex items-center gap-1.5 border border-border px-4 py-2 text-xs tracking-[0.12em] text-fg-muted uppercase transition-colors hover:border-fg hover:text-fg [@media(min-height:800px)]:py-2.5"
           >
             <span>{t.projects.viewGithub}</span>
             <ArrowUpRight className="h-3.5 w-3.5" strokeWidth={1.5} />
@@ -112,7 +112,7 @@ function ProjectPanelContent({
               ? `Agrandir la capture : ${pick(primaryMedia.caption)}`
               : `Enlarge capture: ${pick(primaryMedia.caption)}`
           }
-          className="group/media relative block aspect-[16/10] w-full cursor-zoom-in overflow-hidden border border-border bg-surface text-left transition-colors hover:border-accent"
+          className="group/media relative block aspect-[16/10] w-full cursor-zoom-in overflow-hidden border border-border bg-surface text-left transition-colors hover:border-accent lg:max-h-[48vh] [@media(min-height:800px)]:lg:max-h-none"
         >
           <img
             data-parallax-img
@@ -132,7 +132,7 @@ function ProjectPanelContent({
             <span>{lang === 'fr' ? 'Agrandir' : 'Zoom'}</span>
           </span>
         </button>
-        <figcaption className="font-mono-metric mt-3 flex items-center justify-between gap-4 text-[11px] text-fg-muted">
+        <figcaption className="font-mono-metric mt-2 flex items-center justify-between gap-4 text-[11px] text-fg-muted [@media(min-height:800px)]:mt-3">
           <span>{pick(primaryMedia.caption)}</span>
           <span className="hidden shrink-0 uppercase sm:inline">
             {project.index} / 04
@@ -282,10 +282,10 @@ export function HorizontalProjects() {
       {!reducedMotion && (
         <div
           ref={pinRef}
-          className="hidden lg:flex lg:h-screen lg:flex-col lg:justify-between lg:overflow-hidden lg:pt-20 lg:pb-8"
+          className="hidden lg:flex lg:h-screen lg:flex-col lg:justify-between lg:overflow-hidden lg:pt-16 lg:pb-4 [@media(min-height:800px)]:lg:pt-20 [@media(min-height:800px)]:lg:pb-8"
         >
           {/* Top editorial bar inside pinned stage */}
-          <div className="mx-auto flex w-full max-w-7xl items-end justify-between border-b border-border px-10 pb-5">
+          <div className="mx-auto flex w-full max-w-7xl items-end justify-between border-b border-border px-10 pb-3 [@media(min-height:800px)]:pb-5">
             <div>
               <p className="font-mono-metric text-xs tracking-[0.14em] text-fg-muted uppercase">
                 <span className="text-accent">{t.projects.index}</span> —{' '}
@@ -293,7 +293,7 @@ export function HorizontalProjects() {
               </p>
               <h2
                 id="projects-heading"
-                className="font-display-editorial mt-1 text-4xl text-fg"
+                className="font-display-editorial mt-1 text-3xl text-fg [@media(min-height:800px)]:text-4xl"
               >
                 {t.projects.title}
               </h2>
@@ -319,7 +319,7 @@ export function HorizontalProjects() {
                 <article
                   key={project.id}
                   data-project-panel
-                  className="w-screen shrink-0 py-4"
+                  className="w-screen shrink-0 py-2 [@media(min-height:800px)]:py-4"
                 >
                   <ProjectPanelContent
                     project={project}
