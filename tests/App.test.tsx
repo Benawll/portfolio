@@ -211,9 +211,9 @@ describe('Portfolio App', () => {
 
   it('opens MediaLightbox with interactive zoom controls on capture click', async () => {
     const user = userEvent.setup();
-    renderAt('/projects/token-optimizer');
+    renderAt('/projects/agentflow-studio');
 
-    const enlargeBtn = await screen.findByRole('button', {
+    const [enlargeBtn] = await screen.findAllByRole('button', {
       name: /Agrandir la capture/i,
     });
     await user.click(enlargeBtn);

@@ -135,7 +135,7 @@ function ProjectPanelContent({
         <figcaption className="font-mono-metric mt-2 flex items-center justify-between gap-4 text-[11px] text-fg-muted [@media(min-height:800px)]:mt-3">
           <span>{pick(primaryMedia.caption)}</span>
           <span className="hidden shrink-0 uppercase sm:inline">
-            {project.index} / 04
+            {project.index} / {String(total).padStart(2, '0')}
           </span>
         </figcaption>
       </figure>

@@ -111,11 +111,6 @@ export const SKILLS: SkillItem[] = [
     category: 'ai-mlops',
     proofs: ['Umeå University (AV)'],
   },
-  {
-    name: 'MCP Protocols & Context Optimization',
-    category: 'ai-mlops',
-    proofs: ['Token Optimizer'],
-  },
 
   // Full-Stack
   {

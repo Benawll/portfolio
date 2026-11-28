@@ -4,7 +4,6 @@ const BASE_URL = 'http://127.0.0.1:4173';
 const PROJECT_SLUGS = [
   'agentflow-studio',
   'pulselake-mlops',
-  'token-optimizer',
   'awll-disk-utility',
 ] as const;
 
@@ -239,8 +238,8 @@ async function runMobileCheck() {
     });
 
     assert(
-      articleTops.length === 4,
-      `Expected 4 visible vertical project cards on mobile, found ${articleTops.length}`,
+      articleTops.length === 3,
+      `Expected 3 visible vertical project cards on mobile, found ${articleTops.length}`,
     );
     for (let i = 1; i < articleTops.length; i += 1) {
       assert(
@@ -320,7 +319,7 @@ async function runShortDesktopCheck(width: number, height: number) {
       if (!el) return null;
       const top = el.getBoundingClientRect().top + window.scrollY;
       const travel = Math.max(0, el.getBoundingClientRect().height - window.innerHeight);
-      return [0, 0.34, 0.67, 0.99].map((ratio, idx) => ({
+      return [0, 0.5, 0.99].map((ratio, idx) => ({
         idx,
         y: Math.round(top + travel * ratio),
       }));

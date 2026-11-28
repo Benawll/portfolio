@@ -46,14 +46,14 @@ export function NotFoundPage() {
           </div>
         </div>
 
-        {/* Quick index to the 4 case studies */}
+        {/* Quick index to the case studies */}
         <div className="mt-16 border-t border-border pt-8">
           <p className="font-mono-metric text-[11px] tracking-[0.14em] text-fg-muted uppercase">
             {lang === 'fr'
               ? 'Études de cas disponibles'
               : 'Available case studies'}
           </p>
-          <ul className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          <ul className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-3">
             {PROJECTS.map((project) => (
               <li key={project.id}>
                 <Link
@@ -62,7 +62,7 @@ export function NotFoundPage() {
                 >
                   <div>
                     <span className="font-mono-metric block text-[10px] tracking-[0.14em] text-accent">
-                      {project.index} / 04
+                      {project.index} / {String(PROJECTS.length).padStart(2, '0')}
                     </span>
                     <span className="mt-0.5 block text-sm font-medium text-fg group-hover:text-accent">
                       {project.name}
